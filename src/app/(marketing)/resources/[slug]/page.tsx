@@ -9,7 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ResourceCard } from "@/components/resources/resource-card";
 import { ReadProgress } from "@/components/motion/read-progress";
 import { Reveal } from "@/components/motion/reveal";
-import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { BreadcrumbJsonLd, ArticleJsonLd } from "@/components/seo/json-ld";
 import { getResources } from "@/lib/repo";
 import { trackLabel } from "@/lib/accent";
 import { formatDate } from "@/lib/utils";
@@ -37,10 +37,27 @@ export async function generateMetadata({
   const resources = await getResources();
   const resource = resources.find((r) => r.slug === slug);
   if (!resource) return {};
+  const url = `/resources/${slug}`;
   return {
     title: resource.title,
     description: resource.description,
-    alternates: { canonical: `/resources/${slug}` },
+    keywords: [resource.type, trackLabel[resource.track], "debate", "public speaking", "ORVOX"],
+    authors: [{ name: resource.author }],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: `${resource.title} — ORVOX`,
+      description: resource.description,
+      authors: [resource.author],
+      modifiedTime: resource.updatedAt,
+      section: trackLabel[resource.track],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${resource.title} — ORVOX`,
+      description: resource.description,
+    },
   };
 }
 
@@ -66,6 +83,15 @@ export default async function ResourceDetailPage({
           { name: "Resources", href: "/resources" },
           { name: resource.title, href: `/resources/${slug}` },
         ]}
+      />
+      <ArticleJsonLd
+        title={resource.title}
+        description={resource.description}
+        path={`/resources/${slug}`}
+        author={resource.author}
+        dateModified={resource.updatedAt}
+        section={trackLabel[resource.track]}
+        keywords={[resource.type, trackLabel[resource.track], "debate", "public speaking"]}
       />
 
       <ReadProgress target="article" />

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { ResourcesExplorer } from "@/components/resources/resources-explorer";
 import { buttonVariants } from "@/components/ui/button";
+import { WebPageJsonLd, ItemListJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { getResources, getFeaturedResource } from "@/lib/repo";
 import { trackLabel } from "@/lib/accent";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,18 @@ export default async function ResourcesPage() {
 
   return (
     <>
+      <WebPageJsonLd
+        path="/resources"
+        title="ORVOX Resource Library — debate guides, drills & templates"
+        description="Free debate guides, public speaking drills, and templates from the coaches and chairs who run ORVOX rooms."
+        type="CollectionPage"
+        breadcrumb={[{ name: "Resources", href: "/resources" }]}
+      />
+      <ItemListJsonLd
+        name="ORVOX resource library"
+        items={all.map((r) => ({ name: r.title, href: `/resources/${r.slug}` }))}
+      />
+      <BreadcrumbJsonLd items={[{ name: "Resources", href: "/resources" }]} />
       <PageHeader
         eyebrow="library · free, no login"
         tint="teal"

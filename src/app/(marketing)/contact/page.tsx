@@ -6,12 +6,19 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { ContactForm } from "@/components/contact/contact-form";
 import { Reveal } from "@/components/motion/reveal";
 import { InstagramIcon, XIcon, YoutubeIcon, LinkedinIcon } from "@/components/ui/social-icons";
+import { WebPageJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact",
   description: "Get in touch with ORVOX — hosting, judging, press, or anything else.",
   alternates: { canonical: "/contact" },
+  openGraph: {
+    type: "website",
+    url: "/contact",
+    title: "Contact ORVOX",
+    description: "Get in touch with ORVOX — hosting, judging, press, or anything else.",
+  },
 };
 
 const socials = [
@@ -35,6 +42,14 @@ const channels = [
 export default function ContactPage() {
   return (
     <div className="text-canvas">
+      <WebPageJsonLd
+        path="/contact"
+        title="Contact ORVOX"
+        description="Get in touch with ORVOX — hosting, judging, press, or anything else."
+        type="ContactPage"
+        breadcrumb={[{ name: "Contact", href: "/contact" }]}
+      />
+      <BreadcrumbJsonLd items={[{ name: "Contact", href: "/contact" }]} />
       <PageHeader
         tint="rose"
         title={

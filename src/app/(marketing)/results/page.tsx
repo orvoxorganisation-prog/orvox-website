@@ -4,6 +4,7 @@ import { ArrowUpRight, Trophy } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { PageHeader } from "@/components/ui/page-header";
 import { Reveal } from "@/components/motion/reveal";
+import { WebPageJsonLd, ItemListJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { getResultSets } from "@/lib/repo";
 import { formatDate } from "@/lib/utils";
 
@@ -20,6 +21,20 @@ export default async function ResultsPage() {
 
   return (
     <>
+      <WebPageJsonLd
+        path="/results"
+        title="ORVOX Results — standings & adjudicator feedback"
+        description="Published standings and adjudicator feedback from ORVOX competition rooms."
+        type="CollectionPage"
+        breadcrumb={[{ name: "Results", href: "/results" }]}
+      />
+      {results.length > 0 && (
+        <ItemListJsonLd
+          name="ORVOX results"
+          items={results.map((r) => ({ name: r.eventTitle, href: `/results/${r.eventSlug}` }))}
+        />
+      )}
+      <BreadcrumbJsonLd items={[{ name: "Results", href: "/results" }]} />
       <PageHeader
         eyebrow="published · scored live"
         tint="yellow"

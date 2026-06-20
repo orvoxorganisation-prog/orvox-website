@@ -6,13 +6,22 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Reveal } from "@/components/motion/reveal";
 import { WordReveal } from "@/components/motion/word-reveal";
 import { buttonVariants } from "@/components/ui/button";
-import { siteConfig } from "@/lib/site";
+import { WebPageJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { FaqSection, KeyTakeaways } from "@/components/seo/aeo";
+import { siteConfig, siteFaqs } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
   description:
     "ORVOX is a youth forum for debate and public speaking — registrations, live scoring, and real feedback in one place. Here's why it exists.",
   alternates: { canonical: "/about" },
+  openGraph: {
+    type: "website",
+    url: "/about",
+    title: "About ORVOX",
+    description:
+      "ORVOX is a youth forum for debate and public speaking — registrations, live scoring, and real feedback in one place.",
+  },
 };
 
 const personas = [
@@ -45,6 +54,15 @@ const values = [
 export default function AboutPage() {
   return (
     <div className="text-canvas">
+      <WebPageJsonLd
+        path="/about"
+        title="About ORVOX"
+        description="ORVOX is a youth forum for debate and public speaking — registrations, live scoring, and real feedback in one place."
+        type="AboutPage"
+        breadcrumb={[{ name: "About", href: "/about" }]}
+      />
+      <BreadcrumbJsonLd items={[{ name: "About", href: "/about" }]} />
+
       {/* Manifesto */}
       <Section className="spotlight relative overflow-hidden pt-32 pb-16 sm:pt-44 sm:pb-24">
         <div
@@ -162,6 +180,28 @@ export default function AboutPage() {
               </Link>
             </div>
           </div>
+        </Container>
+      </Section>
+
+      {/* What ORVOX is, in scannable facts — entity signals for AI + readers */}
+      <Section className="pt-0">
+        <Container className="max-w-3xl">
+          <KeyTakeaways
+            title="ORVOX at a glance"
+            items={[
+              "ORVOX is a youth competition platform for student debate and public speaking.",
+              "It runs British Parliamentary debate, public speaking, op-ed writing, and pitch competitions.",
+              "Entry is free and open to high school and college students, ages 14–22.",
+              "Events are online, on-site, or hybrid, with finals in cities including Mumbai, New Delhi, and Bengaluru.",
+              "Every round is scored on the ORVOX rubric, with standings and written feedback published within minutes.",
+            ]}
+          />
+        </Container>
+      </Section>
+
+      <Section className="pt-0 pb-24">
+        <Container className="max-w-3xl">
+          <FaqSection items={[...siteFaqs]} title="About ORVOX: FAQ" />
         </Container>
       </Section>
     </div>

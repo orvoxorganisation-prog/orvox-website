@@ -7,8 +7,11 @@ import { JudgesBand } from "@/components/sections/judges-band";
 import { Proof } from "@/components/sections/proof";
 import { ResourcesTeaser } from "@/components/sections/resources-teaser";
 import { ClosingCta } from "@/components/sections/closing-cta";
-import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/json-ld";
+import { Container, Section } from "@/components/ui/container";
+import { OrganizationJsonLd, WebsiteJsonLd, ItemListJsonLd } from "@/components/seo/json-ld";
+import { FaqSection } from "@/components/seo/aeo";
 import { getEvents } from "@/lib/repo";
+import { siteFaqs } from "@/lib/site";
 import { formatINR } from "@/lib/utils";
 
 export default async function HomePage() {
@@ -32,6 +35,10 @@ export default async function HomePage() {
     <div className="bg-void text-canvas">
       <OrganizationJsonLd />
       <WebsiteJsonLd />
+      <ItemListJsonLd
+        name="ORVOX season events"
+        items={all.map((e) => ({ name: e.title, href: `/events/${e.slug}` }))}
+      />
       <Hero events={heroEvents} tape={tape} />
       <MarqueeStrip />
       <UpcomingEvents />
@@ -40,6 +47,11 @@ export default async function HomePage() {
       <JudgesBand />
       <Proof />
       <ResourcesTeaser />
+      <Section>
+        <Container className="max-w-3xl">
+          <FaqSection items={[...siteFaqs]} title="Frequently asked questions" />
+        </Container>
+      </Section>
       <ClosingCta />
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { PageHeader } from "@/components/ui/page-header";
 import { EventsExplorer } from "@/components/events/events-explorer";
+import { WebPageJsonLd, ItemListJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { getEvents } from "@/lib/repo";
 import type { Track } from "@/lib/data/types";
 
@@ -25,6 +26,18 @@ export default async function EventsPage({
 
   return (
     <>
+      <WebPageJsonLd
+        path="/events"
+        title="ORVOX Events — debate & public speaking competitions"
+        description="Every ORVOX competition this season: debate, public speaking, pitch, and op-ed."
+        type="CollectionPage"
+        breadcrumb={[{ name: "Events", href: "/events" }]}
+      />
+      <ItemListJsonLd
+        name="ORVOX events this season"
+        items={events.map((e) => ({ name: e.title, href: `/events/${e.slug}` }))}
+      />
+      <BreadcrumbJsonLd items={[{ name: "Events", href: "/events" }]} />
       <PageHeader
         eyebrow="S03 · season slate"
         tint="teal"

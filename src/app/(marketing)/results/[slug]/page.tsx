@@ -24,10 +24,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const result = await getResultBySlug(slug);
   if (!result) return {};
+  const url = `/results/${slug}`;
+  const description = `${result.roundLabel}: standings and adjudicator feedback for ${result.eventTitle}. Motion: ${result.motion}`;
   return {
     title: `${result.eventTitle} — Results`,
-    description: `${result.roundLabel}: standings and adjudicator feedback for ${result.eventTitle}.`,
-    alternates: { canonical: `/results/${slug}` },
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: `${result.eventTitle} — Results`,
+      description,
+      modifiedTime: result.decidedAt,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${result.eventTitle} — Results`,
+      description,
+    },
   };
 }
 

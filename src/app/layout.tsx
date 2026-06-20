@@ -64,7 +64,20 @@ export const metadata: Metadata = {
     apple: "/favicon.svg",
   },
   alternates: { canonical: "/" },
-  robots: { index: true, follow: true },
+  category: "education",
+  publisher: siteConfig.name,
+  formatDetection: { telephone: false, address: false, email: false },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {

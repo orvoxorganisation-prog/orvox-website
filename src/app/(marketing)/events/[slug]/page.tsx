@@ -13,8 +13,10 @@ import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { Countdown } from "@/components/motion/countdown";
 import { Reveal } from "@/components/motion/reveal";
 import { Parallax } from "@/components/motion/parallax";
-import { EventJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
-import { getEventBySlug, getEventSlugs } from "@/lib/repo";
+import { EventJsonLd, BreadcrumbJsonLd, PersonJsonLd } from "@/components/seo/json-ld";
+import { FaqSection, QuickAnswer } from "@/components/seo/aeo";
+import { buildEventFaq, eventQuickAnswer } from "@/lib/seo/event-faq";
+import { getEventBySlug, getEventSlugs, getEvents } from "@/lib/repo";
 import { darkAccentOf, trackLabel } from "@/lib/accent";
 import { cn, formatDateRange, formatINR, daysUntil } from "@/lib/utils";
 
@@ -31,11 +33,23 @@ export async function generateMetadata({
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   if (!event) return {};
+  const url = `/events/${event.slug}`;
   return {
     title: event.title,
     description: event.summary,
-    alternates: { canonical: `/events/${event.slug}` },
-    openGraph: { title: `${event.title} — ORVOX`, description: event.summary },
+    keywords: [...event.tags, event.format, event.city, "ORVOX", `${event.track} competition`],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: `${event.title} — ORVOX`,
+      description: event.summary,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${event.title} — ORVOX`,
+      description: event.summary,
+    },
   };
 }
 
@@ -52,6 +66,12 @@ export default async function EventDetailPage({
   const seatsLeft = event.seatsTotal - event.seatsFilled;
   const full = seatsLeft <= 0;
   const closes = daysUntil(event.registrationDeadline);
+  const faq = buildEventFaq(event);
+  const quickAnswer = eventQuickAnswer(event);
+  const allEvents = await getEvents();
+  const relatedEvents = allEvents
+    .filter((e) => e.slug !== event.slug && e.track === event.track)
+    .slice(0, 3);
 
   const facts = [
     { Icon: Calendar, label: "Dates", value: formatDateRange(event.startDate, event.endDate) },
@@ -71,6 +91,8 @@ export default async function EventDetailPage({
           { name: event.title, href: `/events/${event.slug}` },
         ]}
       />
+      <PersonJsonLd name={event.contact.name} jobTitle={event.contact.role} />
+
 
       <div className="spotlight pt-24 text-canvas sm:pt-28">
         <Container>
@@ -94,6 +116,10 @@ export default async function EventDetailPage({
                 {event.subtitle}
               </p>
               <p data-reveal className="mt-6 max-w-xl text-lg leading-relaxed text-ink-300">{event.summary}</p>
+
+              <div data-reveal className="mt-6 max-w-xl">
+                <QuickAnswer label="At a glance">{quickAnswer}</QuickAnswer>
+              </div>
 
               <dl className="mt-9 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-8">
                 {facts.map((fact) => (
@@ -196,6 +222,56 @@ export default async function EventDetailPage({
               </Reveal>
             </aside>
           </div>
+
+          {/* FAQ — visible answers + FAQPage schema for AI answer engines */}
+          <Reveal className="mt-8 max-w-3xl border-t border-white/8 pt-14 pb-4">
+            <FaqSection items={faq} title={`${event.title}: FAQ`} />
+            <div className="mt-12 rounded-card panel p-6">
+              <p className="eyebrow">Organising contact</p>
+              <p className="mt-2 text-[15px] text-ink-200">
+                <span className="font-medium text-canvas">{event.contact.name}</span> · {event.contact.role}
+              </p>
+              <a
+                href={`mailto:${event.contact.email}`}
+                className="mt-1 inline-block text-[15px] text-teal transition-colors hover:text-canvas"
+              >
+                {event.contact.email}
+              </a>
+            </div>
+
+            {/* Topical internal links — related events + prep resources */}
+            <nav aria-label="Related" className="mt-12">
+              <p className="eyebrow">Keep exploring {trackLabel[event.track].toLowerCase()}</p>
+              <ul className="mt-4 flex flex-wrap gap-2.5">
+                {relatedEvents.map((e) => (
+                  <li key={e.slug}>
+                    <Link
+                      href={`/events/${e.slug}`}
+                      className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-ink-300 ring-1 ring-inset ring-white/12 transition-colors hover:bg-white/5 hover:text-canvas"
+                    >
+                      {e.title}
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <Link
+                    href={`/events?track=${event.track}`}
+                    className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-ink-300 ring-1 ring-inset ring-white/12 transition-colors hover:bg-white/5 hover:text-canvas"
+                  >
+                    All {trackLabel[event.track].toLowerCase()} events
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href={`/resources?track=${event.track}`}
+                    className="inline-flex rounded-full px-3.5 py-1.5 text-sm text-ink-300 ring-1 ring-inset ring-white/12 transition-colors hover:bg-white/5 hover:text-canvas"
+                  >
+                    Prep resources
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </Reveal>
         </Container>
       </div>
     </>
