@@ -20,6 +20,7 @@ import {
   BarChart3,
   LogOut,
   ExternalLink,
+  KeyRound,
   Menu,
   X,
 } from "lucide-react";
@@ -157,6 +158,13 @@ export function AdminShell({
       </nav>
 
       <div className="border-t border-white/8 p-3">
+        <Link
+          href="/admin/security"
+          className="mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-ink-400 hover:bg-white/[0.03] hover:text-ink-100"
+        >
+          <KeyRound className="h-3.5 w-3.5" strokeWidth={1.75} />
+          My security · 2FA
+        </Link>
         <Link
           href="/"
           target="_blank"

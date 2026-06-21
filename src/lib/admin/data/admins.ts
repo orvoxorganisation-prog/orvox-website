@@ -26,11 +26,38 @@ export async function getAdminById(adminId: string): Promise<AdminUser | null> {
   return rows[0] ? rowToAdmin(rows[0]) : null;
 }
 
-/** Includes password_hash — only for the login flow. */
-export async function getAdminAuthByEmail(email: string): Promise<(AdminUser & { passwordHash: string }) | null> {
+/** Includes password_hash + MFA fields — only for the login flow. */
+export async function getAdminAuthByEmail(
+  email: string,
+): Promise<(AdminUser & { passwordHash: string; mfaEnabled: boolean; mfaSecret: string | null }) | null> {
   const rows = (await requireSql()`select * from admin_users where email = ${email.toLowerCase()} limit 1`) as Array<Record<string, unknown>>;
   if (!rows[0]) return null;
-  return { ...rowToAdmin(rows[0]), passwordHash: rows[0].password_hash as string };
+  return {
+    ...rowToAdmin(rows[0]),
+    passwordHash: rows[0].password_hash as string,
+    mfaEnabled: Boolean(rows[0].mfa_enabled),
+    mfaSecret: (rows[0].mfa_secret as string) ?? null,
+  };
+}
+
+/** Reads an admin's MFA state (for the enrollment screen). */
+export async function getAdminMfa(adminId: string): Promise<{ enabled: boolean; secret: string | null }> {
+  const rows = (await requireSql()`select mfa_enabled, mfa_secret from admin_users where id = ${adminId} limit 1`) as Array<{ mfa_enabled: boolean; mfa_secret: string | null }>;
+  return { enabled: Boolean(rows[0]?.mfa_enabled), secret: rows[0]?.mfa_secret ?? null };
+}
+
+/** Stores a pending (not-yet-enabled) MFA secret. */
+export async function setAdminMfaSecret(adminId: string, secret: string): Promise<void> {
+  await requireSql()`update admin_users set mfa_secret = ${secret}, mfa_enabled = false, updated_at = now() where id = ${adminId}`;
+}
+
+/** Turns MFA on or off for an admin. */
+export async function setAdminMfaEnabled(adminId: string, enabled: boolean): Promise<void> {
+  if (enabled) {
+    await requireSql()`update admin_users set mfa_enabled = true, updated_at = now() where id = ${adminId}`;
+  } else {
+    await requireSql()`update admin_users set mfa_enabled = false, mfa_secret = null, updated_at = now() where id = ${adminId}`;
+  }
 }
 
 export async function createAdmin(input: { email: string; name: string; role: AdminRole; password: string }): Promise<string> {

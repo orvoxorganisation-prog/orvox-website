@@ -150,7 +150,7 @@ export async function SiteFooter() {
             <span className="font-mono">orvox.in/{siteConfig.season.toLowerCase()}</span>
           </div>
           <div className="flex gap-5">
-            <Link href="/about" className="hover:text-ink-200">Privacy</Link>
+            <Link href="/privacy" className="hover:text-ink-200">Privacy</Link>
             <Link href="/about" className="hover:text-ink-200">Terms</Link>
             <Link href="/contact" className="hover:text-ink-200">Contact</Link>
           </div>

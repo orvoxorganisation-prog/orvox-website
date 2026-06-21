@@ -5,12 +5,17 @@ import { redirect } from "next/navigation";
 import { adminLoginSchema } from "@/lib/admin/validation";
 import { getAdminAuthByEmail, recordAdminLogin } from "@/lib/admin/data/admins";
 import { verifyPassword } from "@/lib/admin/password";
+import { verifyTotp } from "@/lib/admin/totp";
 import { createAdminSession } from "@/lib/admin/session";
-import { logAudit } from "@/lib/admin/audit";
+import { logAudit, countRecentFailedLogins } from "@/lib/admin/audit";
 
 export interface LoginState {
   error?: string;
+  mfaRequired?: boolean; // tells the form to reveal the authenticator-code field
 }
+
+const MAX_FAILED_ATTEMPTS = 8; // per email/IP within the window below
+const LOCKOUT_WINDOW_MIN = 15;
 
 function safeRedirect(from: string | null): string {
   if (from && from.startsWith("/admin") && from !== "/admin/login") return from;
@@ -21,8 +26,25 @@ export async function adminLogin(_prev: LoginState, formData: FormData): Promise
   const parsed = adminLoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    code: formData.get("code"),
   });
   if (!parsed.success) return { error: "Enter your email and password." };
+
+  // Brute-force lockout: too many recent failures for this email or IP.
+  const hForLimit = await headers();
+  const clientIp = hForLimit.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hForLimit.get("x-real-ip") ?? null;
+  try {
+    const recentFailures = await countRecentFailedLogins(parsed.data.email, clientIp, LOCKOUT_WINDOW_MIN);
+    if (recentFailures >= MAX_FAILED_ATTEMPTS) {
+      await logAudit({
+        admin: null,
+        action: "login_blocked",
+        entityType: "session",
+        summary: `Login throttled for ${parsed.data.email} (too many attempts)`,
+      });
+      return { error: "Too many attempts. Please wait a few minutes and try again." };
+    }
+  } catch { /* never block a legitimate login on a throttle-check error */ }
 
   let admin: Awaited<ReturnType<typeof getAdminAuthByEmail>>;
   try {
@@ -57,6 +79,18 @@ export async function adminLogin(_prev: LoginState, formData: FormData): Promise
       });
     } catch { /* audit failures never block login */ }
     return { error: "Invalid email or password." };
+  }
+
+  // Second factor: if this admin has MFA enabled, require a valid TOTP code.
+  if (admin.mfaEnabled && admin.mfaSecret) {
+    const code = parsed.data.code ?? "";
+    if (!code) return { mfaRequired: true, error: "Enter your 6-digit authenticator code." };
+    if (!verifyTotp(admin.mfaSecret, code)) {
+      try {
+        await logAudit({ admin: null, action: "login_failed", entityType: "session", summary: `Failed MFA for ${parsed.data.email}` });
+      } catch { /* ignore */ }
+      return { mfaRequired: true, error: "That code isn't right. Try again." };
+    }
   }
 
   try {

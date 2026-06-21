@@ -146,3 +146,48 @@ export async function dbGetAccountStatus(email: string): Promise<"active" | "ban
   const rows = (await sql`select status from accounts where id = ${email.trim().toLowerCase()} limit 1`) as Array<{ status: string }>;
   return (rows[0]?.status as "active" | "banned") ?? null;
 }
+
+/** Auth view of an account — includes the password hash. Login flow only. */
+export async function dbGetAccountAuth(email: string): Promise<
+  { id: string; name: string; school: string | null; status: string; passwordHash: string | null; emailVerified: boolean } | null
+> {
+  const sql = requireSql();
+  const rows = (await sql`
+    select id, name, school, status, password_hash, email_verified from accounts
+    where id = ${email.trim().toLowerCase()} limit 1
+  `) as Array<{ id: string; name: string; school: string | null; status: string; password_hash: string | null; email_verified: boolean }>;
+  const r = rows[0];
+  return r
+    ? { id: r.id, name: r.name, school: r.school, status: r.status, passwordHash: r.password_hash, emailVerified: Boolean(r.email_verified) }
+    : null;
+}
+
+/** Stores a password hash on an account (claims a passwordless account too). */
+export async function dbSetAccountPassword(email: string, passwordHash: string): Promise<void> {
+  await requireSql()`update accounts set password_hash = ${passwordHash} where id = ${email.trim().toLowerCase()}`;
+}
+
+/** Marks an account's email as verified. */
+export async function dbSetEmailVerified(email: string): Promise<void> {
+  await requireSql()`update accounts set email_verified = true where id = ${email.trim().toLowerCase()}`;
+}
+
+/** Full personal-data export for a user (GDPR access/portability). */
+export async function dbExportAccountData(email: string): Promise<{ account: Record<string, unknown> | null; registrations: Record<string, unknown>[] }> {
+  const sql = requireSql();
+  const id = email.trim().toLowerCase();
+  const accounts = (await sql`
+    select id, name, email, handle, school, city, joined_season, status, email_verified, created_at, last_seen_at
+    from accounts where id = ${id} limit 1
+  `) as Array<Record<string, unknown>>;
+  const registrations = (await sql`
+    select event_slug, status, full_name, email, phone, school, category, motivation, registered_at
+    from registrations where account_id = ${id} order by registered_at desc
+  `) as Array<Record<string, unknown>>;
+  return { account: accounts[0] ?? null, registrations };
+}
+
+/** Deletes a user's account and (via FK cascade) their registrations. */
+export async function dbDeleteAccount(email: string): Promise<void> {
+  await requireSql()`delete from accounts where id = ${email.trim().toLowerCase()}`;
+}

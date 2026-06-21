@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
+import { deleteMyAccount } from "@/app/dashboard/settings/actions";
 
 const notificationRows = [
   { key: "schedule", label: "Schedule changes", desc: "Round times, room moves, and venue updates.", on: true },
@@ -67,19 +69,42 @@ export function SettingsForm({ name, email }: { name: string; email: string }) {
         </form>
       </section>
 
+      {/* Your data (GDPR) */}
+      <section data-reveal aria-label="Your data" className="rounded-feature panel p-6 sm:p-7">
+        <h2 className="text-lg font-semibold tracking-tight text-canvas">Your data</h2>
+        <p className="mt-1 text-sm text-ink-400">
+          Download a copy of everything we hold about your account and registrations.
+        </p>
+        <a
+          href="/dashboard/settings/export"
+          className="press mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-white/5 px-5 text-sm font-medium text-ink-100 ring-1 ring-inset ring-white/15 transition-colors hover:bg-white/10"
+        >
+          <Download className="h-4 w-4" />
+          Export my data
+        </a>
+      </section>
+
       {/* Danger zone */}
       <section data-reveal aria-label="Danger zone" className="rounded-feature bg-danger/[0.04] p-6 ring-1 ring-inset ring-danger/20 sm:p-7">
         <h2 className="text-lg font-semibold tracking-tight text-danger">Danger zone</h2>
         <p className="mt-1 text-sm text-ink-400">
-          Delete your account and everything tied to it. This can't be undone.
+          Delete your account and everything tied to it. This can&apos;t be undone.
         </p>
-        <button
-          type="button"
-          onClick={() => toast.error("Account deletion is disabled in this demo")}
-          className="press mt-5 inline-flex h-10 items-center rounded-full bg-danger/10 px-5 text-sm font-medium text-danger ring-1 ring-inset ring-danger/30 transition-colors hover:bg-danger/15"
+        <form
+          action={deleteMyAccount}
+          onSubmit={(e) => {
+            if (!window.confirm("Permanently delete your account and all registrations? This cannot be undone.")) {
+              e.preventDefault();
+            }
+          }}
         >
-          Delete account
-        </button>
+          <button
+            type="submit"
+            className="press mt-5 inline-flex h-10 items-center rounded-full bg-danger/10 px-5 text-sm font-medium text-danger ring-1 ring-inset ring-danger/30 transition-colors hover:bg-danger/15"
+          >
+            Delete account
+          </button>
+        </form>
       </section>
     </Reveal>
   );

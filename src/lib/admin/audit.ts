@@ -41,6 +41,40 @@ export async function logAudit(input: {
   }
 }
 
+/** Deletes audit rows older than `days` (log-retention policy). Returns count. */
+export async function pruneAuditLogs(days: number): Promise<number> {
+  const rows = (await requireSql()`
+    with deleted as (
+      delete from audit_logs where created_at < now() - make_interval(days => ${days}) returning 1
+    ) select count(*)::int as n from deleted
+  `) as Array<{ n: number }>;
+  return rows[0]?.n ?? 0;
+}
+
+/**
+ * Counts recent failed admin logins for an email *or* source IP — the basis for
+ * brute-force lockout. Best-effort: returns 0 if the audit table is unreachable.
+ */
+export async function countRecentFailedLogins(
+  email: string,
+  ip: string | null,
+  withinMinutes = 15,
+): Promise<number> {
+  try {
+    const needle = `%${email.toLowerCase()}`;
+    const rows = (await requireSql()`
+      select count(*)::int as n from audit_logs
+      where action = 'login_failed'
+        and created_at > now() - make_interval(mins => ${withinMinutes})
+        and (lower(summary) like ${needle} or (${ip}::text is not null and ip = ${ip}))
+    `) as Array<{ n: number }>;
+    return rows[0]?.n ?? 0;
+  } catch (err) {
+    console.error("failed-login count failed:", err);
+    return 0;
+  }
+}
+
 export async function getAuditLogs(opts: {
   limit?: number;
   offset?: number;

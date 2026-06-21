@@ -121,13 +121,16 @@ export async function getAccount(): Promise<Account | null> {
   const session = await getSession();
   if (!session) return null;
 
-  // Enforce admin bans: a banned account is treated as signed out.
+  // Enforce admin bans (and, when enabled, email verification): either is
+  // treated as signed out.
   if (isDbConfigured) {
     try {
-      const { dbGetAccountStatus } = await import("./db/public");
-      if ((await dbGetAccountStatus(session.email)) === "banned") return null;
+      const { dbGetAccountAuth } = await import("./db/public");
+      const acct = await dbGetAccountAuth(session.email);
+      if (acct?.status === "banned") return null;
+      if (process.env.REQUIRE_EMAIL_VERIFICATION === "true" && acct && !acct.emailVerified) return null;
     } catch (err) {
-      console.error("getAccount: ban check failed:", err);
+      console.error("getAccount: status check failed:", err);
     }
   }
 

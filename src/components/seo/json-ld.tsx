@@ -5,11 +5,19 @@ const ORG_ID = `${siteConfig.url}/#organization`;
 const WEBSITE_ID = `${siteConfig.url}/#website`;
 
 function JsonLd({ data }: { data: Record<string, unknown> }) {
+  // Escape characters that could break out of the <script> context. Some fields
+  // (event titles, FAQ answers, etc.) are admin-editable, so never trust them to
+  // be free of "</script>" or HTML-significant characters.
+  const json = JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/[\u2028]/g, "\\u2028")
+    .replace(/[\u2029]/g, "\\u2029");
   return (
     <script
       type="application/ld+json"
-      // Structured data is static + trusted; safe to inline.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: json }}
     />
   );
 }

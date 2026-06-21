@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
+import { CookieConsent } from "@/components/site/cookie-consent";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -103,6 +104,7 @@ export default function RootLayout({
         </a>
         {children}
         <Toaster />
+        <CookieConsent />
       </body>
     </html>
   );
