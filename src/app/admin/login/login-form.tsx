@@ -30,8 +30,24 @@ export function LoginForm() {
         <Input id="password" name="password" type="password" autoComplete="current-password" placeholder="••••••••••" required />
       </FormField>
 
+      {state.mfaRequired ? (
+        <FormField label="Authenticator code" htmlFor="code" required>
+          <Input
+            id="code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="123456"
+            maxLength={6}
+            pattern="[0-9]*"
+            autoFocus
+            required
+          />
+        </FormField>
+      ) : null}
+
       <SubmitButton variant="yellow" size="lg" className="w-full" pendingLabel="Signing in…">
-        Sign in
+        {state.mfaRequired ? "Verify & sign in" : "Sign in"}
       </SubmitButton>
     </form>
   );

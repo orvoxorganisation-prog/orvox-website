@@ -10,9 +10,13 @@ export interface SettingsResult {
   error?: string;
 }
 
+const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
 /** Sets a possibly-nested key (dotted path) on an object, cloning as it goes. */
 function setPath(obj: Record<string, unknown>, path: string, value: string) {
   const parts = path.split(".");
+  // Reject prototype-pollution payloads (e.g. field:__proto__.polluted).
+  if (parts.some((p) => FORBIDDEN_KEYS.has(p))) return;
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i];

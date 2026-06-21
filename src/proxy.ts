@@ -10,8 +10,27 @@ import type { NextRequest } from "next/server";
  */
 const ADMIN_COOKIE = "orvox_admin";
 
+function clientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    ""
+  );
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Optional admin IP allowlist (opt-in via ADMIN_IP_ALLOWLIST). Applies to the
+  // entire /admin tree, including the login page, so locked-down deployments
+  // can restrict admin access to office/VPN ranges.
+  const allow = (process.env.ADMIN_IP_ALLOWLIST ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (allow.length > 0 && !allow.includes(clientIp(request))) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
 
   // Login + the 403 screen must stay reachable without a session.
   if (pathname === "/admin/login" || pathname === "/admin/403") {

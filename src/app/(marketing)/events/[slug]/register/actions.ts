@@ -5,6 +5,7 @@ import { getEventBySlug } from "@/lib/repo";
 import { getSession, addStoredRegistration } from "@/lib/session";
 import { sql } from "@/lib/db/client";
 import { dbUpsertAccount } from "@/lib/db/public";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 /** Confirmation code like ORV-7Q4K-2P. */
 function confirmationCode() {
@@ -23,6 +24,9 @@ export async function registerForEvent(
   slug: string,
   raw: unknown,
 ): Promise<RegistrationResult> {
+  const limit = await rateLimit(`register:${await clientIp()}`, 10, 600);
+  if (!limit.ok) return { ok: false, message: "Too many attempts. Please wait a moment and try again." };
+
   const event = await getEventBySlug(slug);
   if (!event) return { ok: false, message: "That event no longer exists." };
 

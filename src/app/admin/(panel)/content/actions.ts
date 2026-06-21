@@ -19,8 +19,12 @@ export async function updateContentBlockAction(_prev: ContentResult, fd: FormDat
   // Reconstruct the value object from `field:<subkey>` inputs, preserving the
   // original key set so we never drop fields the editor didn't render.
   const value: Record<string, unknown> = { ...existing.value };
+  const forbidden = new Set(["__proto__", "prototype", "constructor"]);
   for (const [name, raw] of fd.entries()) {
-    if (name.startsWith("field:")) value[name.slice(6)] = String(raw);
+    if (!name.startsWith("field:")) continue;
+    const subkey = name.slice(6);
+    if (forbidden.has(subkey)) continue; // block prototype pollution
+    value[subkey] = String(raw);
   }
 
   await updateContentBlock(key, value, admin.email);

@@ -14,9 +14,13 @@ export function slugify(input: string): string {
     .slice(0, 80);
 }
 
-/** CSV-escape a single cell. */
+/** CSV-escape a single cell, neutralising spreadsheet formula injection. */
 export function csvCell(value: unknown): string {
-  const s = value == null ? "" : String(value);
+  let s = value == null ? "" : String(value);
+  // A leading =, +, -, @, tab or CR makes Excel/Sheets treat the cell as a
+  // formula. Registrant-supplied fields (name, motivation…) flow into exports,
+  // so prefix a single quote to force literal text.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

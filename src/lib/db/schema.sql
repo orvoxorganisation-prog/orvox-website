@@ -303,3 +303,37 @@ create table if not exists media (
   created_at  timestamptz not null default now()
 );
 create index if not exists media_folder_idx on media (folder);
+
+-- ============================================================================
+-- SECURITY / AUTH HARDENING (added by security audit)
+-- All statements below are idempotent so the migrate runner can re-apply them.
+-- ============================================================================
+
+-- ---- Admin MFA (TOTP) ---------------------------------------------------
+alter table admin_users add column if not exists mfa_secret  text;
+alter table admin_users add column if not exists mfa_enabled boolean not null default false;
+
+-- ---- Participant email verification ------------------------------------
+alter table accounts add column if not exists email_verified boolean not null default false;
+
+-- ---- One-time auth tokens (email verification + password reset) ---------
+-- Only the SHA-256 hash of each token is stored, so a leaked row can't be used.
+create table if not exists auth_tokens (
+  id          bigint generated always as identity primary key,
+  purpose     text not null,                 -- 'verify' | 'reset'
+  account_id  text not null references accounts(id) on delete cascade,
+  token_hash  text not null unique,          -- sha256(token)
+  expires_at  timestamptz not null,
+  used_at     timestamptz,
+  created_at  timestamptz not null default now()
+);
+create index if not exists auth_tokens_account_idx on auth_tokens (account_id, purpose);
+create index if not exists auth_tokens_expires_idx on auth_tokens (expires_at);
+
+-- ---- Fixed-window rate limiting (DB-backed, serverless-safe) ------------
+create table if not exists rate_limits (
+  bucket       text primary key,             -- e.g. 'signup:1.2.3.4'
+  count        integer not null default 0,
+  window_start timestamptz not null default now()
+);
+create index if not exists rate_limits_window_idx on rate_limits (window_start);
